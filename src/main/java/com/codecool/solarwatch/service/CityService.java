@@ -20,7 +20,6 @@ public class CityService {
     }
 
     public City getCity(String cityName, String country) {
-        // First try to find by both name and country if country is provided
         if (country != null && !country.isBlank()) {
             Optional<City> existingCity = cityRepository.findByNameAndCountry(cityName, country);
             if (existingCity.isPresent()) {
@@ -28,21 +27,17 @@ public class CityService {
             }
         }
 
-        // If not found, try to find just by name
         Optional<City> cityOptional = Optional.ofNullable(cityRepository.findByName(cityName));
         if (cityOptional.isPresent()) {
             City city = cityOptional.get();
-            // If country was provided but doesn't match, throw exception
             if (country != null && !country.isBlank() && !city.getCountry().equalsIgnoreCase(country)) {
                 throw new CityNotFoundException("City " + cityName + " not found in country: " + country);
             }
             return city;
         }
 
-        // If still not found, fetch from API
         City city = geoCodingService.getCity(cityName, country);
         
-        // Save the city to the database
         return cityRepository.save(city);
     }
 

@@ -6,15 +6,16 @@ import com.codecool.solarwatch.model.Coordinates;
 import com.codecool.solarwatch.repository.CityRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
 @Service
 public class GeoCodingService {
 
-    private final RestTemplate restTemplate;
+    private final WebClient webClient;
     private final CityRepository cityRepository;
     
     @Value("${geo.api.key:${GEO_API_KEY:}}")
@@ -22,13 +23,12 @@ public class GeoCodingService {
     
     private static final String GEOCODING_API_URL = "http://api.openweathermap.org/geo/1.0/direct";
 
-    public GeoCodingService(RestTemplate restTemplate, CityRepository cityRepository) {
-        this.restTemplate = restTemplate;
+    public GeoCodingService(WebClient webClient, CityRepository cityRepository) {
+        this.webClient = webClient;
         this.cityRepository = cityRepository;
     }
 
     public City getCity(String cityName, String country) {
-        // First try to find by both name and country if country is provided
         if (country != null && !country.isBlank()) {
             Optional<City> cityOptional = cityRepository.findByNameAndCountry(cityName, country);
             if (cityOptional.isPresent()) {
@@ -36,23 +36,26 @@ public class GeoCodingService {
             }
         }
 
-        // If not found, try to find just by name
         Optional<City> cityOptional = Optional.ofNullable(cityRepository.findByName(cityName));
         if (cityOptional.isPresent()) {
             return cityOptional.get();
         }
 
-        // If still not found, fetch from API
         try {
             String query = country != null && !country.isBlank() 
                 ? String.format("%s,%s", cityName, country) 
                 : cityName;
                 
-            GeoCodingResponse[] response = restTemplate.getForObject(
-                    GEOCODING_API_URL + "?q={query}&limit={limit}&appid={apiKey}",
-                    GeoCodingResponse[].class,
-                    query, 1, apiKey
-            );
+            GeoCodingResponse[] response = webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                    .path("")
+                    .queryParam("q", query)
+                    .queryParam("limit", 1)
+                    .queryParam("appid", apiKey)
+                    .build(GEOCODING_API_URL))
+                .retrieve()
+                .bodyToMono(GeoCodingResponse[].class)
+                .block();
 
             if (response == null || response.length == 0) {
                 throw new CityNotFoundException("City not found: " + cityName + (country != null ? ", " + country : ""));
@@ -65,7 +68,7 @@ public class GeoCodingService {
                               geoData.getCountry(), 
                               coordinates);
             return cityRepository.save(city);
-        } catch (HttpClientErrorException e) {
+        } catch (WebClientResponseException e) {
             throw new CityNotFoundException("Error fetching city data: " + e.getMessage());
         } catch (Exception e) {
             throw new CityNotFoundException("Error processing city data: " + e.getMessage());

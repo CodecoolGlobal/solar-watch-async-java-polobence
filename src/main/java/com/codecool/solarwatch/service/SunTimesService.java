@@ -5,7 +5,8 @@ import com.codecool.solarwatch.model.City;
 import com.codecool.solarwatch.model.SunTimes;
 import com.codecool.solarwatch.repository.SunTimesRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -16,15 +17,14 @@ import java.util.Optional;
 @Service
 public class SunTimesService {
 
-    private final RestTemplate restTemplate;
+    private final WebClient webClient;
     private final SunTimesRepository sunTimesRepository;
     private final CityService cityService;
-    private static final String API_URL = "https://api.sunrise-sunset.org/json";
 
-    public SunTimesService(RestTemplate restTemplate, 
+    public SunTimesService(WebClient webClient, 
                           SunTimesRepository sunTimesRepository,
                           CityService cityService) {
-        this.restTemplate = restTemplate;
+        this.webClient = webClient;
         this.sunTimesRepository = sunTimesRepository;
         this.cityService = cityService;
     }
@@ -43,26 +43,34 @@ public class SunTimesService {
 
     private SunTimes fetchAndSaveSunTimes(City city, LocalDate date) {
         String formattedDate = date.format(DateTimeFormatter.ISO_DATE);
-        String url = String.format(
-                "%s?lat=%s&lng=%s&date=%s&formatted=0",
-                API_URL,
-                city.getCoordinates().latitude(),
-                city.getCoordinates().longitude(),
-                formattedDate
-        );
+        
+        try {
+            Map response = webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                    .path("/json")
+                    .queryParam("lat", city.getCoordinates().latitude())
+                    .queryParam("lng", city.getCoordinates().longitude())
+                    .queryParam("date", formattedDate)
+                    .queryParam("formatted", 0)
+                    .build())
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block();
 
-        Map response = restTemplate.getForObject(url, Map.class);
+            if (response == null || !"OK".equals(response.get("status"))) {
+                throw new RuntimeException("Failed to get sun times from API");
+            }
 
-        if (response == null || !"OK".equals(response.get("status"))) {
-            throw new RuntimeException("Failed to get sun times from API");
+            @SuppressWarnings("unchecked")
+            Map<String, String> results = (Map<String, String>) response.get("results");
+            LocalTime sunrise = LocalTime.parse(results.get("sunrise"));
+            LocalTime sunset = LocalTime.parse(results.get("sunset"));
+
+            SunTimes sunTimes = new SunTimes(date, sunrise, sunset, city);
+            return sunTimesRepository.save(sunTimes);
+            
+        } catch (WebClientResponseException e) {
+            throw new RuntimeException("Error fetching sun times: " + e.getMessage());
         }
-
-
-        Map<String, String> results = (Map<String, String>) response.get("results");
-        LocalTime sunrise = LocalTime.parse(results.get("sunrise"));
-        LocalTime sunset = LocalTime.parse(results.get("sunset"));
-
-        SunTimes sunTimes = new SunTimes(date, sunrise, sunset, city);
-        return sunTimesRepository.save(sunTimes);
     }
 }

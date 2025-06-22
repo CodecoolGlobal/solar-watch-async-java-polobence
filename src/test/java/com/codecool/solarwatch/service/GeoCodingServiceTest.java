@@ -12,8 +12,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
@@ -25,7 +26,16 @@ import static org.mockito.Mockito.*;
 class GeoCodingServiceTest {
 
     @Mock
-    private RestTemplate restTemplate;
+    private WebClient webClient;
+    
+    @Mock
+    private WebClient.RequestHeadersUriSpec requestHeadersUriSpec;
+    
+    @Mock
+    private WebClient.RequestHeadersSpec requestHeadersSpec;
+    
+    @Mock
+    private WebClient.ResponseSpec responseSpec;
     
     @Mock
     private CityRepository cityRepository;
@@ -34,7 +44,11 @@ class GeoCodingServiceTest {
 
     @BeforeEach
     void setUp() {
-        geoCodingService = new GeoCodingService(restTemplate, cityRepository);
+        when(webClient.get()).thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(anyString())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+
+        geoCodingService = new GeoCodingService(webClient, cityRepository);
         ReflectionTestUtils.setField(geoCodingService, "apiKey", "test-api-key");
     }
 
@@ -50,7 +64,7 @@ class GeoCodingServiceTest {
 
         assertEquals(city, result);
         verify(cityRepository).findByNameAndCountry(cityName, country);
-        verifyNoInteractions(restTemplate);
+        verifyNoInteractions(webClient);
     }
 
     @Test
@@ -65,8 +79,7 @@ class GeoCodingServiceTest {
         
         when(cityRepository.findByNameAndCountry(cityName, country)).thenReturn(Optional.empty());
         when(cityRepository.findByName(cityName)).thenReturn(null);
-        when(restTemplate.getForObject(anyString(), eq(GeoCodingResponse[].class), anyString(), anyInt(), anyString()))
-                .thenReturn(response);
+        when(responseSpec.bodyToMono(GeoCodingResponse[].class)).thenReturn(Mono.just(response));
         when(cityRepository.save(any(City.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         City result = geoCodingService.getCity(cityName, country);
@@ -86,8 +99,7 @@ class GeoCodingServiceTest {
         String country = "UK";
         when(cityRepository.findByNameAndCountry(cityName, country)).thenReturn(Optional.empty());
         when(cityRepository.findByName(cityName)).thenReturn(null);
-        when(restTemplate.getForObject(anyString(), eq(GeoCodingResponse[].class), anyString(), anyInt(), anyString()))
-                .thenReturn(new GeoCodingResponse[0]);
+        when(responseSpec.bodyToMono(GeoCodingResponse[].class)).thenReturn(Mono.just(new GeoCodingResponse[0]));
 
         assertThrows(CityNotFoundException.class, () -> geoCodingService.getCity(cityName, country));
     }
@@ -98,8 +110,8 @@ class GeoCodingServiceTest {
         String country = "UK";
         when(cityRepository.findByNameAndCountry(cityName, country)).thenReturn(Optional.empty());
         when(cityRepository.findByName(cityName)).thenReturn(null);
-        when(restTemplate.getForObject(anyString(), eq(GeoCodingResponse[].class), anyString(), anyInt(), anyString()))
-                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
+        when(responseSpec.bodyToMono(GeoCodingResponse[].class))
+                .thenReturn(Mono.error(new WebClientResponseException("Not Found", 404, "Not Found", null, null, null)));
 
         assertThrows(CityNotFoundException.class, () -> geoCodingService.getCity(cityName, country));
     }
