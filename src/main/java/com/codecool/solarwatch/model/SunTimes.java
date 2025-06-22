@@ -34,7 +34,6 @@ public class SunTimes {
         this.city = city;
     }
     
-    // Getters and setters
     public Long getId() {
         return id;
     }

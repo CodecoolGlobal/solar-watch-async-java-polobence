@@ -22,7 +22,6 @@ public class SunTimesService {
     private final SunTimesRepository sunTimesRepository;
     private final CityService cityService;
     
-    // DateTimeFormatter for ISO 8601 format with timezone offset
     private static final DateTimeFormatter ISO_OFFSET_DATE_TIME = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
     public SunTimesService(WebClient webClient, 
@@ -34,14 +33,12 @@ public class SunTimesService {
     }
 
     public SunTimes getSunTimes(String cityName, String country, LocalDate date) {
-        // First try to find in database
         City city = cityService.getCity(cityName, country);
         Optional<SunTimes> existingSunTimes = sunTimesRepository.findByCityAndDate(city, date);
         if (existingSunTimes.isPresent()) {
             return existingSunTimes.get();
         }
 
-        // If not found, fetch from API and save to database
         return fetchAndSaveSunTimes(city, date);
     }
 
@@ -68,7 +65,6 @@ public class SunTimesService {
             @SuppressWarnings("unchecked")
             Map<String, String> results = (Map<String, String>) response.get("results");
             
-            // Parse the ISO 8601 formatted datetime strings to LocalTime
             LocalTime sunrise = OffsetDateTime.parse(
                 results.get("sunrise"), 
                 ISO_OFFSET_DATE_TIME
