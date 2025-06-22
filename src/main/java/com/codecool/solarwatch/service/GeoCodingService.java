@@ -3,6 +3,7 @@ package com.codecool.solarwatch.service;
 import com.codecool.solarwatch.exception.CityNotFoundException;
 import com.codecool.solarwatch.model.City;
 import com.codecool.solarwatch.model.Coordinates;
+import com.codecool.solarwatch.model.GeoCodingResponse;
 import com.codecool.solarwatch.repository.CityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,31 +84,6 @@ public class GeoCodingService {
         } catch (Exception e) {
             logger.error("Error processing city data: {}", e.getMessage(), e);
             throw new CityNotFoundException("Error processing city data: " + e.getMessage());
-        }
-    }
-
-    private static class GeoCodingResponse {
-        private String name;
-        private double lat;
-        private double lon;
-        private String country;
-        private String state;
-
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public double getLat() { return lat; }
-        public void setLat(double lat) { this.lat = lat; }
-        public double getLon() { return lon; }
-        public void setLon(double lon) { this.lon = lon; }
-        public String getCountry() { return country; }
-        public void setCountry(String country) { this.country = country; }
-        public String getState() { return state; }
-        public void setState(String state) { this.state = state; }
-        
-        @Override
-        public String toString() {
-            return String.format("GeoCodingResponse{name='%s', lat=%.4f, lon=%.4f, country='%s', state='%s'}",
-                    name, lat, lon, country, state);
         }
     }
 }

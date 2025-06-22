@@ -32,11 +32,9 @@ public class SunTimesController {
             return ResponseEntity.badRequest().body("City parameter is required");
         }
 
-
         if (date == null) {
             date = LocalDate.now();
         }
-
 
         try {
             SunTimes sunTimes = sunTimesService.getSunTimes(city, country, date);
