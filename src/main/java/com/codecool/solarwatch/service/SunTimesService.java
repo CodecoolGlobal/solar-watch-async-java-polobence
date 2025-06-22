@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Optional;
@@ -20,6 +21,9 @@ public class SunTimesService {
     private final WebClient webClient;
     private final SunTimesRepository sunTimesRepository;
     private final CityService cityService;
+    
+    // DateTimeFormatter for ISO 8601 format with timezone offset
+    private static final DateTimeFormatter ISO_OFFSET_DATE_TIME = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
     public SunTimesService(WebClient webClient, 
                           SunTimesRepository sunTimesRepository,
@@ -63,14 +67,25 @@ public class SunTimesService {
 
             @SuppressWarnings("unchecked")
             Map<String, String> results = (Map<String, String>) response.get("results");
-            LocalTime sunrise = LocalTime.parse(results.get("sunrise"));
-            LocalTime sunset = LocalTime.parse(results.get("sunset"));
+            
+            // Parse the ISO 8601 formatted datetime strings to LocalTime
+            LocalTime sunrise = OffsetDateTime.parse(
+                results.get("sunrise"), 
+                ISO_OFFSET_DATE_TIME
+            ).toLocalTime();
+            
+            LocalTime sunset = OffsetDateTime.parse(
+                results.get("sunset"), 
+                ISO_OFFSET_DATE_TIME
+            ).toLocalTime();
 
             SunTimes sunTimes = new SunTimes(date, sunrise, sunset, city);
             return sunTimesRepository.save(sunTimes);
             
         } catch (WebClientResponseException e) {
-            throw new RuntimeException("Error fetching sun times: " + e.getMessage());
+            throw new RuntimeException("Error fetching sun times: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new RuntimeException("Error processing sun times: " + e.getMessage(), e);
         }
     }
 }
