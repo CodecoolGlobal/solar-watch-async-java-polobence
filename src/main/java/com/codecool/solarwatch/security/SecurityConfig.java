@@ -2,8 +2,10 @@ package com.codecool.solarwatch.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -14,6 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -28,16 +31,30 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .anyRequest().authenticated()
-                )
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                
+                // Public read endpoints
+                .requestMatchers(HttpMethod.GET, "/api/cities/**").hasAnyAuthority("city:read")
+                .requestMatchers(HttpMethod.GET, "/api/suntimes/**").hasAnyAuthority("suntimes:read")
+                
+                // Protected write endpoints (admin only)
+                .requestMatchers(HttpMethod.POST, "/api/cities").hasAuthority("city:create")
+                .requestMatchers(HttpMethod.PUT, "/api/cities/**").hasAuthority("city:update")
+                .requestMatchers(HttpMethod.DELETE, "/api/cities/**").hasAuthority("city:delete")
+                
+                .requestMatchers(HttpMethod.POST, "/api/suntimes").hasAuthority("suntimes:create")
+                .requestMatchers(HttpMethod.PUT, "/api/suntimes/**").hasAuthority("suntimes:update")
+                .requestMatchers(HttpMethod.DELETE, "/api/suntimes/**").hasAuthority("suntimes:delete")
+                
+                .anyRequest().authenticated()
+            )
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

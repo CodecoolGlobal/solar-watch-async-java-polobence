@@ -5,7 +5,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.Collections;
 
 @Entity
 @Table(name = "users")
@@ -23,6 +22,10 @@ public class UserEntity implements UserDetails {
     @Column(nullable = false)
     private String email;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
     @Column(nullable = false)
     private boolean enabled = true;
 
@@ -33,6 +36,7 @@ public class UserEntity implements UserDetails {
         this.username = username;
         this.password = password;
         this.email = email;
+        this.role = Role.USER; // Default role
     }
 
     // Getters and Setters
@@ -70,6 +74,14 @@ public class UserEntity implements UserDetails {
         this.email = email;
     }
 
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
     @Override
     public boolean isEnabled() {
         return enabled;
@@ -82,7 +94,7 @@ public class UserEntity implements UserDetails {
     // UserDetails methods
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.emptyList();
+        return role.getAuthorities();
     }
 
     @Override
