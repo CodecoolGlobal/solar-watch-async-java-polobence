@@ -37,17 +37,17 @@ public class SecurityConfig {
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 
                 // Public read endpoints
-                .requestMatchers(HttpMethod.GET, "/api/cities/**").hasAnyAuthority("city:read")
-                .requestMatchers(HttpMethod.GET, "/api/suntimes/**").hasAnyAuthority("suntimes:read")
+                .requestMatchers(HttpMethod.GET, "/api/cities/**").hasRole("USER")
+                .requestMatchers(HttpMethod.GET, "/api/suntimes/**").hasRole("USER")
                 
                 // Protected write endpoints (admin only)
-                .requestMatchers(HttpMethod.POST, "/api/cities").hasAuthority("city:create")
-                .requestMatchers(HttpMethod.PUT, "/api/cities/**").hasAuthority("city:update")
-                .requestMatchers(HttpMethod.DELETE, "/api/cities/**").hasAuthority("city:delete")
+                .requestMatchers(HttpMethod.POST, "/api/cities").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/cities/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/cities/**").hasRole("ADMIN")
                 
-                .requestMatchers(HttpMethod.POST, "/api/suntimes").hasAuthority("suntimes:create")
-                .requestMatchers(HttpMethod.PUT, "/api/suntimes/**").hasAuthority("suntimes:update")
-                .requestMatchers(HttpMethod.DELETE, "/api/suntimes/**").hasAuthority("suntimes:delete")
+                .requestMatchers(HttpMethod.POST, "/api/suntimes").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/suntimes/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/suntimes/**").hasRole("ADMIN")
                 
                 .anyRequest().authenticated()
             )

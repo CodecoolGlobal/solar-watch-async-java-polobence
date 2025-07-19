@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -83,5 +84,52 @@ public class SunTimesService {
         } catch (Exception e) {
             throw new RuntimeException("Error processing sun times: " + e.getMessage(), e);
         }
+    }
+
+    public SunTimes createSunTimes(SunTimes sunTimes) {
+        Optional<SunTimes> existingSunTimes = sunTimesRepository.findByCityAndDate(
+            sunTimes.getCity(), 
+            sunTimes.getDate()
+        );
+        
+        if (existingSunTimes.isPresent()) {
+            throw new RuntimeException("Sun times already exist for this city and date");
+        }
+        
+        return sunTimesRepository.save(sunTimes);
+    }
+    
+    public SunTimes updateSunTimes(Long id, SunTimes sunTimesDetails) {
+        SunTimes sunTimes = sunTimesRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Sun times not found with id: " + id));
+            
+        sunTimes.setDate(sunTimesDetails.getDate());
+        sunTimes.setSunrise(sunTimesDetails.getSunrise());
+        sunTimes.setSunset(sunTimesDetails.getSunset());
+        
+        if (sunTimesDetails.getCity() != null &&
+            (sunTimes.getCity() == null || 
+             !sunTimes.getCity().getId().equals(sunTimesDetails.getCity().getId()))) {
+            City city = cityService.getCityById(sunTimesDetails.getCity().getId());
+            sunTimes.setCity(city);
+        }
+        
+        return sunTimesRepository.save(sunTimes);
+    }
+    
+    public void deleteSunTimes(Long id) {
+        SunTimes sunTimes = sunTimesRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Sun times not found with id: " + id));
+            
+        sunTimesRepository.delete(sunTimes);
+    }
+    
+    public SunTimes getSunTimesById(Long id) {
+        return sunTimesRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Sun times not found with id: " + id));
+    }
+    
+    public List<SunTimes> getAllSunTimes() {
+        return sunTimesRepository.findAll();
     }
 }
