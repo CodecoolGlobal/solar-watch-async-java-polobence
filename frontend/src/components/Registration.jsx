@@ -45,7 +45,7 @@ const Registration = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8080/api/auth/signup', {
+      const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,8 +63,7 @@ const Registration = () => {
         throw new Error(data.message || 'Registration failed');
       }
 
-      // Registration successful
-      navigate('/login'); // Redirect to login page
+      navigate('/login');
     } catch (err) {
       setError(err.message || 'An error occurred during registration');
     } finally {
