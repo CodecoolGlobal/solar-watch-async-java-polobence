@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import './Login.css';
 
-function Login() {
+function Login({ onLogin }) {
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -10,6 +10,7 @@ function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,7 +35,7 @@ function Login() {
           username: formData.username,
           password: formData.password
         }),
-        credentials: 'include' // Important for cookies/session
+        credentials: 'include'
       });
 
       const data = await response.json();
@@ -43,13 +44,16 @@ function Login() {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Store the token if your backend returns one
       if (data.token) {
         localStorage.setItem('token', data.token);
       }
 
-      // Redirect to home on successful login
-      navigate('/');
+      if (onLogin) {
+        onLogin();
+      }
+
+      const from = location.state?.from?.pathname || '/';
+      navigate(from, { replace: true });
     } catch (err) {
       setError(err.message || 'An error occurred during login');
     } finally {
@@ -74,6 +78,7 @@ function Login() {
               onChange={handleChange}
               required
               placeholder="Enter your username"
+              disabled={isLoading}
             />
           </div>
           
@@ -87,6 +92,7 @@ function Login() {
               onChange={handleChange}
               required
               placeholder="Enter your password"
+              disabled={isLoading}
             />
           </div>
           
