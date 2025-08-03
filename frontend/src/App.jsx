@@ -1,5 +1,5 @@
 import { Routes, Route, Link } from 'react-router-dom';
-import Registration from './components/Registration';
+import Registration from './pages/Registration';
 import './App.css'
 
 function App() {
