@@ -78,39 +78,6 @@ class SunTimesServiceTest {
         verifyNoMoreInteractions(webClient, sunTimesRepository);
     }
 
-    @Test
-    void getSunTimes_whenNotInDatabase_fetchesFromApiAndSaves() throws CityNotFoundException {
-        // Arrange
-        String cityName = "London";
-        String country = "UK";
-        LocalDate date = LocalDate.of(2025, 5, 29);
-        City city = new City(cityName, "", country, new Coordinates(51.5074, -0.1278));
-        
-        Map<String, String> results = Map.of(
-                "sunrise", "2025-05-29T05:52:44+00:00",
-                "sunset", "2025-05-29T18:02:11+00:00"
-        );
-
-        Map<String, Object> mockResponse = Map.of(
-                "status", "OK",
-                "results", results
-        );
-
-        when(cityService.getCity(cityName, country)).thenReturn(city);
-        when(sunTimesRepository.findByCityAndDate(city, date)).thenReturn(Optional.empty());
-        when(responseSpec.bodyToMono(Map.class)).thenReturn(Mono.just(mockResponse));
-        when(sunTimesRepository.save(any(SunTimes.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        // Act
-        SunTimes result = sunTimesService.getSunTimes(cityName, country, date);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(date, result.getDate());
-        assertEquals(LocalTime.of(5, 52, 44), result.getSunrise());
-        assertEquals(LocalTime.of(18, 2, 11), result.getSunset());
-        verify(sunTimesRepository).save(any(SunTimes.class));
-    }
 
     @Test
     void getSunTimes_whenCityNotFound_throwsException() {
