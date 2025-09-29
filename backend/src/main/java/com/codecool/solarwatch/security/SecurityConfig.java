@@ -43,11 +43,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 
-                // Public read endpoints
                 .requestMatchers(HttpMethod.GET, "/api/cities/**").hasRole("USER")
                 .requestMatchers(HttpMethod.GET, "/api/suntimes/**").hasRole("USER")
                 
-                // Protected write endpoints (admin only)
                 .requestMatchers(HttpMethod.POST, "/api/cities").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/cities/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/cities/**").hasRole("ADMIN")

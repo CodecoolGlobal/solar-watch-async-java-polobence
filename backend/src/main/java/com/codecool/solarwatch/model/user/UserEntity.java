@@ -36,10 +36,9 @@ public class UserEntity implements UserDetails {
         this.username = username;
         this.password = password;
         this.email = email;
-        this.role = Role.USER; // Default role
+        this.role = Role.USER;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -91,7 +90,6 @@ public class UserEntity implements UserDetails {
         this.enabled = enabled;
     }
 
-    // UserDetails methods
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return role.getAuthorities();

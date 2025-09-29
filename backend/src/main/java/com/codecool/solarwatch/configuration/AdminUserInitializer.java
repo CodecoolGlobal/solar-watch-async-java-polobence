@@ -20,7 +20,6 @@ public class AdminUserInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // Check if admin user already exists
         if (userRepository.findByUsername("admin").isEmpty()) {
             UserEntity admin = new UserEntity(
                     "admin",

@@ -33,7 +33,6 @@ public class GeoCodingService {
 
     public City getCity(String cityName, String country) {
         try {
-            // First try to find in database
             if (country != null && !country.isBlank()) {
                 Optional<City> cityOptional = cityRepository.findByNameAndCountry(cityName, country);
                 if (cityOptional.isPresent()) {

@@ -75,7 +75,7 @@ public class AuthenticationService {
 
     private String generateToken(String username) {
         return jwtUtil.generateToken(
-                (org.springframework.security.core.userdetails.UserDetails) userRepository.findByUsername(username)
+                userRepository.findByUsername(username)
                         .orElseThrow(() -> new RuntimeException("User not found with username: " + username))
         );
     }
