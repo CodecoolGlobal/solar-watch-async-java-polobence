@@ -87,7 +87,6 @@ Before you begin, ensure you have the following installed on your system:
 - [Docker](https://docs.docker.com/get-docker/) (v20.10.0 or higher)
 - [Docker Compose](https://docs.docker.com/compose/install/) (v2.0.0 or higher)
 - [Node.js](https://nodejs.org/) (v18.0.0 or higher)
-- [Java Development Kit (JDK)](https://adoptium.net/) (v21 or higher)
 - [Git](https://git-scm.com/downloads)
 
 ### Installation
